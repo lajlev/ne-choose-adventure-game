@@ -1,26 +1,27 @@
 .game {
   max-width: 640px;
+  width: 100%;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 1.5rem;
   text-align: center;
 }
 
 h1 {
-  font-size: 2rem;
-  margin-bottom: 2rem;
+  font-size: 1.75rem;
+  margin-bottom: 1.5rem;
   color: #c9a0dc;
 }
 
 .scene {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 12px;
-  padding: 2rem;
+  padding: 1.5rem;
 }
 
 .scene-text {
-  font-size: 1.15rem;
+  font-size: 1.05rem;
   line-height: 1.7;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .choices {
@@ -30,8 +31,10 @@ h1 {
 }
 
 .choices button {
-  padding: 0.9rem 1.5rem;
+  width: 100%;
+  padding: 1rem 1.25rem;
   font-size: 1rem;
+  line-height: 1.4;
   border-radius: 8px;
   border: 1px solid rgba(201, 160, 220, 0.3);
   background: rgba(201, 160, 220, 0.1);
@@ -43,6 +46,10 @@ h1 {
 .choices button:hover {
   background: rgba(201, 160, 220, 0.25);
   border-color: #c9a0dc;
+}
+
+.choices button:active {
+  background: rgba(201, 160, 220, 0.35);
 }
 
 .ending {
@@ -77,6 +84,10 @@ h1 {
   background: rgba(201, 160, 220, 0.3);
 }
 
+.ending button:active {
+  background: rgba(201, 160, 220, 0.4);
+}
+
 .back-btn {
   margin-top: 1.5rem;
   padding: 0.5rem 1.2rem;
@@ -90,6 +101,27 @@ h1 {
   transition: opacity 0.2s;
 }
 
-.back-btn:hover {
+.back-btn:hover,
+.back-btn:active {
   opacity: 0.8;
+}
+
+@media (min-width: 768px) {
+  .game {
+    padding: 3rem 2rem;
+  }
+
+  h1 {
+    font-size: 2.25rem;
+    margin-bottom: 2rem;
+  }
+
+  .scene {
+    padding: 2.5rem;
+  }
+
+  .scene-text {
+    font-size: 1.15rem;
+    margin-bottom: 2rem;
+  }
 }
