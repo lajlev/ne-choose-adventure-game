@@ -1,88 +1,180 @@
+export const INITIAL_STATS = {
+  health: 70,
+  happiness: 60,
+  friends: 3,
+  dollars: 20,
+};
+
 const story = {
   start: {
-    text: "You wake up in a dark forest. The trees tower above you, their branches blocking out most of the moonlight. A narrow path splits in two directions.",
+    text: "It's Monday morning. Your alarm goes off way too early. You have a math test today that you barely studied for. What do you do?",
     choices: [
-      { text: "Take the left path toward a faint glow", next: "glow" },
-      { text: "Take the right path into deeper darkness", next: "darkness" },
+      {
+        text: "Drag yourself out of bed and cram before school",
+        next: "cram",
+        stats: { health: -5, happiness: -5 },
+      },
+      {
+        text: "Skip school and go back to sleep",
+        next: "skip_school",
+        stats: { health: +10, happiness: +5, dollars: -5 },
+      },
     ],
   },
-  glow: {
-    text: "You follow the glow and find a small cottage with warm light spilling from its windows. Smoke curls from the chimney. The door is slightly ajar.",
+
+  cram: {
+    text: "You chug some coffee and speed-read your notes. At school, you manage a B- on the test. Not bad! Your friend Maya catches you in the hall. 'Hey, a bunch of us are going to the mall after school. You in?'",
     choices: [
-      { text: "Knock on the door", next: "knock" },
-      { text: "Peek through the window first", next: "peek" },
+      {
+        text: "Go to the mall with friends",
+        next: "mall",
+        stats: { happiness: +10, friends: +1, dollars: -15 },
+      },
+      {
+        text: "Head home to rest, you're exhausted",
+        next: "rest_home",
+        stats: { health: +10, happiness: +5 },
+      },
     ],
   },
-  darkness: {
-    text: "The path grows narrower. You hear running water ahead. Suddenly, you stumble upon an old stone bridge over a rushing river. On the bridge sits a cloaked figure.",
+
+  skip_school: {
+    text: "You sleep until noon — it feels amazing. But then you see 12 missed texts. Your friend Jordan says the teacher is furious. You also missed a group project meeting. Your phone buzzes again — it's your mom asking why the school called.",
     choices: [
-      { text: "Approach the figure and say hello", next: "greet" },
-      { text: "Try to sneak past them", next: "sneak" },
+      {
+        text: "Sneak out before mom gets home and meet Jordan",
+        next: "sneak_out",
+        stats: { happiness: +5, friends: +1, health: -5 },
+      },
+      {
+        text: "Stay home and face the consequences",
+        next: "face_mom",
+        stats: { happiness: -10, health: +5 },
+      },
     ],
   },
-  knock: {
-    text: "An old woman opens the door with a kind smile. 'Come in, traveler! I've been expecting you.' She offers you a warm bowl of stew and a seat by the fire.",
+
+  mall: {
+    text: "The mall is packed. You grab food court pizza with Maya, Jordan, and a few others. Someone suggests checking out the new thrift store. Then Maya whispers, 'I think I saw someone shoplifting over there...'",
     choices: [
-      { text: "Accept her hospitality", next: "accept" },
-      { text: "Ask how she was expecting you", next: "question" },
+      {
+        text: "Mind your own business and keep shopping",
+        next: "keep_shopping",
+        stats: { dollars: -10, happiness: +5 },
+      },
+      {
+        text: "Tell a store employee what you saw",
+        next: "tell_employee",
+        stats: { happiness: -5, friends: -1 },
+      },
     ],
   },
-  peek: {
-    text: "Through the window you see shelves lined with glowing bottles, strange maps on the walls, and a black cat staring directly at you. The cat meows loudly.",
+
+  rest_home: {
+    text: "You crash on the couch and binge a show. Around 6pm, you get a text from a classmate: 'Hey, I'm starting a small tutoring business. Want to help? I'll split the money.' Could be cool, but it means less free time.",
     choices: [
-      { text: "Quickly knock on the door before you're caught", next: "knock" },
-      { text: "Back away slowly and return to the forest", next: "forest_return" },
+      {
+        text: "Say yes to the tutoring gig",
+        next: "tutoring",
+        stats: { dollars: +20, friends: +1, happiness: -5 },
+      },
+      {
+        text: "Pass on it and enjoy your evening",
+        next: "chill_evening",
+        stats: { happiness: +10, health: +5 },
+      },
     ],
   },
-  greet: {
-    text: "The figure lowers their hood, revealing an elf with silver hair. 'Few dare to walk this path at night. You have courage.' They offer you a small, glowing stone. 'Take this — you'll need it where you're going.'",
+
+  sneak_out: {
+    text: "You meet Jordan at the park. They're stressed about the group project too. 'We can still pull it together if we work tonight,' Jordan says. But you also notice a pickup basketball game happening nearby.",
     choices: [
-      { text: "Take the stone and cross the bridge", next: "stone_cross" },
-      { text: "Refuse politely and ask for directions instead", next: "directions" },
+      {
+        text: "Work on the project with Jordan",
+        next: "project_work",
+        stats: { friends: +1, happiness: -5, dollars: +5 },
+      },
+      {
+        text: "Join the basketball game first",
+        next: "basketball",
+        stats: { health: +10, happiness: +10, friends: +2 },
+      },
     ],
   },
-  sneak: {
-    text: "You try to tiptoe past, but the old bridge creaks loudly. The figure turns. 'No need to hide, traveler. I mean you no harm.' They chuckle softly.",
+
+  face_mom: {
+    text: "Mom is disappointed but appreciates your honesty. She grounds you for the week but says, 'At least you told the truth.' Later that night, you study hard and actually start understanding the math. Your phone buzzes — a classmate is selling concert tickets cheap.",
     choices: [
-      { text: "Apologize and introduce yourself", next: "greet" },
-      { text: "Run across the bridge", next: "run_bridge" },
+      {
+        text: "Buy the concert tickets (you'll figure out the grounding later)",
+        next: "concert_tickets",
+        stats: { dollars: -15, happiness: +15 },
+      },
+      {
+        text: "Stay focused and keep studying",
+        next: "study_hard",
+        stats: { happiness: +5, health: +5 },
+      },
     ],
   },
-  accept: {
-    text: "The stew warms you to your bones. The old woman tells you tales of the forest — of hidden treasures and ancient guardians. As dawn breaks, she hands you a hand-drawn map. 'Your adventure is just beginning,' she says with a wink.",
+
+  keep_shopping: {
+    text: "You find an awesome vintage jacket at the thrift store. The group hangs out until the mall closes, laughing and trying on ridiculous outfits. It's one of those perfect afternoons. On the bus home, Maya says, 'We should do this every week.'",
     ending: true,
+    endingTitle: "The Good Times",
     endingType: "good",
-    endingTitle: "A Warm Welcome",
   },
-  question: {
-    text: "'The forest tells me things,' she says mysteriously. 'It told me someone brave would come tonight.' She opens a trunk and pulls out a shimmering cloak. 'Wear this. It will protect you on your journey ahead.'",
+
+  tell_employee: {
+    text: "The employee thanks you, but it turns out it was just a kid putting something back on the wrong shelf. Maya gives you a weird look. 'Why'd you snitch like that?' The vibe is a bit off for the rest of the day, but you know you tried to do the right thing. On the walk home, a different friend, Alex, texts you: 'Hey, heard what happened. Respect.'",
     ending: true,
+    endingTitle: "Doing the Right Thing",
+    endingType: "neutral",
+  },
+
+  tutoring: {
+    text: "The tutoring gig takes off! You and your classmate help three younger kids with math every Tuesday and Thursday. Within a couple weeks, you've made decent money, gotten better at math yourself, and even made new friends. Your teacher notices and writes you a recommendation letter.",
+    ending: true,
+    endingTitle: "The Side Hustle",
     endingType: "good",
-    endingTitle: "The Gift of Foresight",
   },
-  forest_return: {
-    text: "You back away into the forest. The trees seem to shift around you, and soon you're completely lost. After hours of wandering, you find yourself back where you started. The sun is rising. You survived the night, but the mystery of the cottage remains unsolved.",
+
+  chill_evening: {
+    text: "You spend the evening drawing, listening to music, and texting friends. It's nothing special, but it feels exactly right. Sometimes the best days are the quiet ones. You go to bed early and wake up feeling great for once.",
     ending: true,
-    endingType: "neutral",
-    endingTitle: "Lost and Found",
-  },
-  stone_cross: {
-    text: "The stone pulses with warm light as you cross the bridge. On the other side, the forest opens into a moonlit meadow filled with fireflies. In the center stands an ancient tree with a door carved into its trunk. You press the stone against it, and the door swings open, revealing a staircase spiraling down into golden light.",
-    ending: true,
+    endingTitle: "Peace and Quiet",
     endingType: "good",
-    endingTitle: "The Hidden Realm",
   },
-  directions: {
-    text: "The elf nods thoughtfully. 'The nearest town is half a day's walk east. But if you seek something more... follow the river north.' You thank them and head east toward safety. Sometimes the wisest adventure is knowing when to rest.",
+
+  project_work: {
+    text: "You and Jordan crank out an amazing presentation at the library. The teacher is impressed enough to only dock a few points for the missed meeting. Jordan buys you a smoothie as thanks. 'You really saved us,' they say. You head home tired but proud.",
     ending: true,
-    endingType: "neutral",
-    endingTitle: "The Cautious Traveler",
+    endingTitle: "Teamwork Pays Off",
+    endingType: "good",
   },
-  run_bridge: {
-    text: "You sprint across the bridge. The figure calls after you but you don't stop. On the other side, you trip on a root and tumble down a hill, landing in a pile of soft moss. You're bruised but safe. Above you, the stars shine bright. You laugh at yourself and make camp for the night.",
+
+  basketball: {
+    text: "The game is incredible — you nail a three-pointer and everyone cheers. You make friends with some kids from another school. But when you check your phone, Jordan's sent five messages. The project is due tomorrow and it's barely started. You rush to Jordan's house and pull an all-nighter. You're wrecked the next day, but the project gets a passing grade.",
     ending: true,
+    endingTitle: "Living on the Edge",
     endingType: "neutral",
-    endingTitle: "A Hasty Exit",
+    endingStats: { health: -15, friends: -1 },
+  },
+
+  concert_tickets: {
+    text: "You buy the tickets and hide them under your mattress. Two weeks later, you convince mom to let you go by acing a surprise quiz. The concert is UNREAL. You scream every lyric and make friends with the people next to you. Totally worth the risk.",
+    ending: true,
+    endingTitle: "Worth the Risk",
+    endingType: "good",
+    endingStats: { friends: +2 },
+  },
+
+  study_hard: {
+    text: "You study every night that week. When the next test comes, you crush it — 95%. Mom lifts the grounding early. 'I'm proud of you,' she says. It feels better than you expected. You celebrate by treating yourself to your favorite takeout.",
+    ending: true,
+    endingTitle: "The Comeback",
+    endingType: "good",
+    endingStats: { dollars: -10, happiness: +10 },
   },
 };
 
