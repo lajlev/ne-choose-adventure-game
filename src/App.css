@@ -36,7 +36,6 @@ h1 {
   transition: border-color 0.4s, box-shadow 0.4s, transform 0.3s;
 }
 
-/* Gradient fill behind the card */
 .stat-fill {
   position: absolute;
   bottom: 0;
@@ -47,22 +46,16 @@ h1 {
   border-radius: 0 0 12px 12px;
 }
 
-/* Glow on positive change */
 .stat-glow-pos {
   border-color: rgba(111, 207, 151, 0.5);
-  box-shadow:
-    0 0 12px rgba(111, 207, 151, 0.25),
-    0 0 24px rgba(111, 207, 151, 0.1);
+  box-shadow: 0 0 12px rgba(111, 207, 151, 0.25), 0 0 24px rgba(111, 207, 151, 0.1);
   transform: scale(1.08);
   animation: stat-pulse-pos 0.8s ease-out;
 }
 
-/* Glow on negative change */
 .stat-glow-neg {
   border-color: rgba(235, 87, 87, 0.5);
-  box-shadow:
-    0 0 12px rgba(235, 87, 87, 0.25),
-    0 0 24px rgba(235, 87, 87, 0.1);
+  box-shadow: 0 0 12px rgba(235, 87, 87, 0.25), 0 0 24px rgba(235, 87, 87, 0.1);
   transform: scale(1.08);
   animation: stat-pulse-neg 0.8s ease-out;
 }
@@ -147,7 +140,6 @@ h1 {
   z-index: 1;
 }
 
-/* Mini progress bar at bottom of card */
 .stat-bar {
   width: 100%;
   height: 3px;
@@ -166,14 +158,37 @@ h1 {
   box-shadow: 0 0 6px var(--bar-color, #c9a0dc);
 }
 
-/* ── Step counter ── */
+/* ── Day tracker ── */
 
-.step-counter {
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  opacity: 0.3;
+.day-tracker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
   margin-bottom: 0.75rem;
+  padding: 0.4rem 0.8rem;
+  background: rgba(201, 160, 220, 0.08);
+  border-radius: 20px;
+  display: inline-flex;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.day-icon {
+  font-size: 1rem;
+}
+
+.day-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #c9a0dc;
+}
+
+.day-progress {
+  font-size: 0.7rem;
+  opacity: 0.4;
+  font-weight: 600;
 }
 
 /* ── Scene ── */
@@ -234,14 +249,8 @@ h1 {
 }
 
 @keyframes choice-slide-in {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .choices .choice-btn:hover {
@@ -351,9 +360,7 @@ h1 {
 }
 
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
 
 /* ── Error ── */
@@ -426,16 +433,205 @@ h1 {
   background: rgba(201, 160, 220, 0.35);
 }
 
+.key-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
 .key-hint {
   font-size: 0.75rem;
   opacity: 0.35;
   max-width: 280px;
 }
 
+/* ── Profile setup screen ── */
+
+.profile-screen {
+  text-align: left;
+}
+
+.profile-heading {
+  text-align: center;
+  font-size: 1.3rem;
+  color: #c9a0dc;
+  margin-bottom: 1.25rem;
+}
+
+.profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin-bottom: 1.5rem;
+}
+
+.profile-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  flex: 1;
+}
+
+.profile-field label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.5;
+  font-weight: 600;
+}
+
+.profile-field input,
+.profile-field select {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.95rem;
+  border-radius: 8px;
+  border: 1px solid rgba(201, 160, 220, 0.2);
+  background: rgba(255, 255, 255, 0.06);
+  color: inherit;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.profile-field input:focus,
+.profile-field select:focus {
+  outline: none;
+  border-color: #c9a0dc;
+  box-shadow: 0 0 8px rgba(201, 160, 220, 0.1);
+}
+
+.profile-field select {
+  appearance: none;
+  cursor: pointer;
+}
+
+.profile-row {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.start-btn {
+  display: block;
+  margin: 0 auto 0.75rem;
+}
+
+/* ── Personality profile card ── */
+
+.ending-screen {
+  text-align: center;
+}
+
+.profile-result {
+  margin-top: 1.5rem;
+}
+
+.personality-card {
+  animation: card-appear 0.6s ease;
+}
+
+@keyframes card-appear {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.personality-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #c9a0dc;
+  margin-bottom: 1rem;
+  text-shadow: 0 0 16px rgba(201, 160, 220, 0.3);
+}
+
+.personality-image-wrap {
+  margin: 1rem auto;
+  max-width: 280px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 2px solid rgba(201, 160, 220, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 24px rgba(201, 160, 220, 0.15);
+  animation: image-glow 3s ease-in-out infinite alternate;
+}
+
+@keyframes image-glow {
+  from { box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 24px rgba(201, 160, 220, 0.15); }
+  to { box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 40px rgba(201, 160, 220, 0.3); }
+}
+
+.personality-image {
+  width: 100%;
+  display: block;
+}
+
+.personality-traits {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.45rem;
+  margin: 1rem 0;
+}
+
+.trait-badge {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 20px;
+  background: rgba(201, 160, 220, 0.12);
+  border: 1px solid rgba(201, 160, 220, 0.25);
+  color: #d4b5e8;
+  animation: badge-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.trait-badge:nth-child(1) { animation-delay: 0s; }
+.trait-badge:nth-child(2) { animation-delay: 0.08s; }
+.trait-badge:nth-child(3) { animation-delay: 0.16s; }
+.trait-badge:nth-child(4) { animation-delay: 0.24s; }
+.trait-badge:nth-child(5) { animation-delay: 0.32s; }
+
+@keyframes badge-pop {
+  from { opacity: 0; transform: scale(0.6); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.personality-desc {
+  font-size: 1rem;
+  line-height: 1.75;
+  opacity: 0.8;
+  margin: 1rem 0;
+  text-align: left;
+}
+
+.final-stats {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.final-stats h3 {
+  font-size: 0.9rem;
+  opacity: 0.5;
+  margin-bottom: 0.75rem;
+}
+
+.restart-btn {
+  margin-top: 1.5rem;
+  padding: 0.8rem 2.5rem;
+  font-size: 1rem;
+  border-radius: 10px;
+  border: 1px solid #c9a0dc;
+  background: rgba(201, 160, 220, 0.15);
+  color: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.restart-btn:hover {
+  background: rgba(201, 160, 220, 0.3);
+  box-shadow: 0 4px 20px rgba(201, 160, 220, 0.2);
+}
+
 /* ── Change key button ── */
 
 .change-key-btn {
-  margin-top: 1.5rem;
+  margin-top: 1rem;
   padding: 0.4rem 1rem;
   font-size: 0.75rem;
   border-radius: 6px;
@@ -445,6 +641,9 @@ h1 {
   cursor: pointer;
   opacity: 0.3;
   transition: opacity 0.2s;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .change-key-btn:hover {
@@ -488,5 +687,9 @@ h1 {
   .scene-text {
     font-size: 1.15rem;
     margin-bottom: 1.25rem;
+  }
+
+  .personality-image-wrap {
+    max-width: 340px;
   }
 }

@@ -1,39 +1,79 @@
-const SYSTEM_PROMPT = `You are a teen life story game narrator. You generate interactive story scenes about realistic teen life — school, friends, family, money, health, social situations.
+const SYSTEM_PROMPT = `Du er en fortæller i et teenagelivs-eventyrspil. Du genererer interaktive scener om realistisk teenageliv i Danmark — skole, venner, familie, penge, helbred, sociale situationer.
 
-You MUST respond with valid JSON matching this exact schema:
+VIGTIGT: Alt tekst SKAL være på dansk. Skriv levende, relaterbart dansk med emojis.
+
+Spilleren har følgende profil:
+{{PLAYER_PROFILE}}
+
+Du SKAL svare med valid JSON der matcher dette skema:
 {
-  "text": "The scene description in multiple paragraphs separated by \\n\\n. Use emojis liberally to set the mood. 3-5 sentences total.",
+  "text": "Scenebeskrivelsen i flere afsnit adskilt af \\n\\n. Brug emojis. 3-5 sætninger. Brug spillerens navn og deres venner/families navne naturligt.",
   "choices": [
     {
-      "text": "Choice description with a leading emoji (short, 5-15 words)",
-      "stats": { "health": 0, "happiness": 0, "friends": 0, "dollars": 0 }
+      "text": "Valgbeskrivelse med emoji i starten (kort, 5-15 ord)",
+      "stats": { "health": 0, "happiness": 0, "friends": 0, "kroner": 0 }
     }
   ],
   "ending": false
 }
 
-Rules:
-- Always give exactly 3 choices (never 2, never 4 — always 3)
-- Each choice text MUST start with a relevant emoji (e.g. "🎮 Stay home and game all night")
-- Scene text MUST use emojis naturally throughout (2-4 per scene) and separate paragraphs with \\n\\n
-- Stat changes should be integers between -20 and +20, only include non-zero stats
-- Each choice should meaningfully affect 1-3 stats
-- The 3 choices should feel genuinely different — one risky/bold, one safe/careful, one social/creative
-- Keep the tone relatable, vivid, and age-appropriate for teens
-- Reference characters and events from earlier in the story for continuity
-- After the player has made 4+ choices, you may create an ending scene. After 6+ choices you MUST end the story
-- For ending scenes set "ending": true and add "endingTitle" (creative 2-4 word title with an emoji) and "endingType" ("good", "neutral", or "bad"). Ending scenes have no choices array — use an empty array []
-- Ending scene text should also use emojis and be dramatic/satisfying
-- Make choices feel meaningful with real trade-offs
-- Consider the player's current stats when writing — low health means they're tired/sick, low dollars means they're broke, high friends means they're popular, etc.`;
+Regler:
+- Giv ALTID præcis 3 valgmuligheder
+- Hver valgtekst SKAL starte med en relevant emoji (f.eks. "🎮 Bliv hjemme og spil hele aftenen")
+- Scenetekst SKAL bruge emojis naturligt (2-4 per scene) og adskille afsnit med \\n\\n
+- Stat-ændringer skal være heltal mellem -20 og +20, inkluder kun ikke-nul stats
+- Hvert valg skal påvirke 1-3 stats meningsfuldt
+- De 3 valg skal føles ægte forskellige — ét risikofyldt/dristigt, ét sikkert/forsigtigt, ét socialt/kreativt
+- Hold tonen relaterbar, levende og alderssvarende for teenagere
+- Brug spillerens navn, venners navne og familiemedlemmers navne naturligt i historien
+- Referer til spillerens hjemby når det passer
+- Referer til karakterer og begivenheder fra tidligere i historien for kontinuitet
+- Hver scene repræsenterer en halv dag (formiddag eller eftermiddag/aften)
+- Scenen SKAL passe til tidspunktet: formiddagsscener handler om at stå op, skole, morgenmad osv. Eftermiddags/aften-scener handler om fritid, venner, aftensaktiviteter
+- Overvej spillerens nuværende stats — lavt helbred = træt/syg, få kroner = pengemangel, mange venner = populær osv.
+- Spillet varer præcis 7 dage (14 halve dage / scener). Du SKAL ALDRIG slutte historien før scene 14. På PRÆCIS scene 14 SKAL du lave en afslutning.
+- For afslutningsscener: sæt "ending": true og tilføj "endingTitle" (kreativ titel med emoji) og "endingType" ("good", "neutral" eller "bad"). Afslutningsscener har ingen choices — brug tom array []
+- Afslutningsscenetekst skal opsummere ugen dramatisk og tilfredsstillende med emojis
+- Gør valg meningsfulde med ægte afvejninger`;
 
-export async function generateScene(apiKey, stats, history) {
-  const userMessage = `Current stats: Health=${stats.health}, Happiness=${stats.happiness}, Friends=${stats.friends}, Dollars=${stats.dollars}
+const PROFILE_PROMPT = `Du er en personlighedsanalytiker. Baseret på en teenagers valg i løbet af en uge, skal du skabe en personlighedsprofil.
 
-Choices made so far (${history.length} total):
-${history.length === 0 ? "None — this is the opening scene. Start a new teen life day." : history.map((h, i) => `${i + 1}. "${h.choiceText}" → ${h.sceneText}`).join("\n")}
+Du SKAL svare med valid JSON:
+{
+  "title": "En kreativ titel for personlighedstypen med emoji (f.eks. '🦁 Den Modige Leder')",
+  "traits": ["egenskab1", "egenskab2", "egenskab3", "egenskab4", "egenskab5"],
+  "description": "En kort, positiv og opløftende personlighedsbeskrivelse på 3-4 sætninger på dansk. Vær specifik om hvad valgene afslører om personligheden. Brug emojis.",
+  "imagePrompt": "A colorful, stylized digital illustration portrait representing a [personality type] teenager. [Include specific visual metaphors based on the personality traits]. Vibrant colors, modern art style, positive mood, no text."
+}
 
-Generate the next scene. Remember: 3 choices, emojis in text and choice labels, paragraphs separated by \\n\\n.`;
+Analyser disse valg og stats og lav en profil:`;
+
+export async function generateScene(apiKey, stats, history, playerProfile, sceneNumber) {
+  const profileStr = [
+    `Navn: ${playerProfile.name}`,
+    playerProfile.age ? `Alder: ${playerProfile.age}` : null,
+    playerProfile.gender ? `Køn: ${playerProfile.gender}` : null,
+    playerProfile.town ? `Hjemby: ${playerProfile.town}` : null,
+    playerProfile.friends ? `Venner: ${playerProfile.friends}` : null,
+    playerProfile.family ? `Familie: ${playerProfile.family}` : null,
+  ].filter(Boolean).join("\n");
+
+  const prompt = SYSTEM_PROMPT.replace("{{PLAYER_PROFILE}}", profileStr);
+
+  const day = Math.floor((sceneNumber - 1) / 2) + 1;
+  const timeOfDay = sceneNumber % 2 === 1 ? "formiddag" : "eftermiddag/aften";
+  const dayNames = ["mandag", "tirsdag", "onsdag", "torsdag", "fredag", "lørdag", "søndag"];
+  const dayName = dayNames[day - 1] || "søndag";
+
+  const userMessage = `Nuværende stats: Helbred=${stats.health}, Humør=${stats.happiness}, Venner=${stats.friends}, Kroner=${stats.kroner}
+
+Scene ${sceneNumber} af 14 — Dag ${day} (${dayName}), ${timeOfDay}
+${sceneNumber === 14 ? "⚠️ DETTE ER DEN SIDSTE SCENE! Du SKAL lave en afslutning med ending: true!" : `Der er ${14 - sceneNumber} scener tilbage.`}
+
+Valg indtil nu (${history.length} i alt):
+${history.length === 0 ? "Ingen — dette er åbningsscenen. Start en ny uge i " + (playerProfile.town || "byen") + " på en mandag morgen." : history.map((h, i) => `${i + 1}. "${h.choiceText}"`).join("\n")}
+
+Generer næste scene. Husk: 3 valgmuligheder, emojis, dansk, afsnit adskilt af \\n\\n.${sceneNumber === 14 ? " AFSLUT HISTORIEN!" : ""}`;
 
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -44,7 +84,7 @@ Generate the next scene. Remember: 3 choices, emojis in text and choice labels, 
     body: JSON.stringify({
       model: "gpt-4o-mini",
       messages: [
-        { role: "system", content: SYSTEM_PROMPT },
+        { role: "system", content: prompt },
         { role: "user", content: userMessage },
       ],
       response_format: { type: "json_object" },
@@ -55,10 +95,73 @@ Generate the next scene. Remember: 3 choices, emojis in text and choice labels, 
 
   if (!res.ok) {
     const err = await res.text();
-    throw new Error(`OpenAI API error (${res.status}): ${err}`);
+    throw new Error(`OpenAI API fejl (${res.status}): ${err}`);
   }
 
   const data = await res.json();
   const content = data.choices[0].message.content;
   return JSON.parse(content);
+}
+
+export async function generatePersonality(apiKey, stats, history, playerProfile) {
+  const choicesSummary = history.map((h, i) => `${i + 1}. "${h.choiceText}"`).join("\n");
+
+  const userMessage = `Spiller: ${playerProfile.name}${playerProfile.age ? `, ${playerProfile.age} år` : ""}
+Endelige stats: Helbred=${stats.health}, Humør=${stats.happiness}, Venner=${stats.friends}, Kroner=${stats.kroner}
+
+Valg i løbet af ugen:
+${choicesSummary}
+
+Lav en personlighedsprofil baseret på disse valg. Svar på dansk (undtagen imagePrompt som skal være på engelsk).`;
+
+  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: PROFILE_PROMPT },
+        { role: "user", content: userMessage },
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.8,
+      max_tokens: 500,
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`OpenAI API fejl (${res.status}): ${err}`);
+  }
+
+  const data = await res.json();
+  return JSON.parse(data.choices[0].message.content);
+}
+
+export async function generateProfileImage(apiKey, imagePrompt) {
+  const res = await fetch("https://api.openai.com/v1/images/generations", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: "dall-e-3",
+      prompt: imagePrompt,
+      n: 1,
+      size: "1024x1024",
+      quality: "standard",
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`DALL-E fejl (${res.status}): ${err}`);
+  }
+
+  const data = await res.json();
+  return data.data[0].url;
 }

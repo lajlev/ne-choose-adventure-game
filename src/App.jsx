@@ -1,14 +1,28 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { INITIAL_STATS } from "./story";
-import { generateScene } from "./generateScene";
+import {
+  generateScene,
+  generatePersonality,
+  generateProfileImage,
+} from "./generateScene";
 import "./App.css";
 
 const STAT_CONFIG = {
-  health: { label: "Health", icon: "❤️", color: "#eb5757", max: 100 },
-  happiness: { label: "Happy", icon: "😊", color: "#f2c94c", max: 100 },
-  friends: { label: "Friends", icon: "👫", color: "#56ccf2", max: 20 },
-  dollars: { label: "Dollars", icon: "💵", color: "#6fcf97", max: 100 },
+  health: { label: "Helbred", icon: "❤️", color: "#eb5757", max: 100 },
+  happiness: { label: "Humør", icon: "😊", color: "#f2c94c", max: 100 },
+  friends: { label: "Venner", icon: "👫", color: "#56ccf2", max: 20 },
+  kroner: { label: "Kroner", icon: "💰", color: "#6fcf97", max: 500 },
 };
+
+const DAY_NAMES = [
+  "Mandag",
+  "Tirsdag",
+  "Onsdag",
+  "Torsdag",
+  "Fredag",
+  "Lørdag",
+  "Søndag",
+];
 
 function applyStats(current, changes) {
   if (!changes) return current;
@@ -23,7 +37,7 @@ function formatDelta(val) {
   return val > 0 ? `+${val}` : `${val}`;
 }
 
-function StatCard({ statKey, value, delta, config }) {
+function StatCard({ value, delta, config }) {
   const [animate, setAnimate] = useState(false);
   const prevValue = useRef(value);
   const fillPct = Math.min(100, (value / config.max) * 100);
@@ -66,10 +80,7 @@ function StatCard({ statKey, value, delta, config }) {
         </span>
       )}
       <span className="stat-label">{config.label}</span>
-      <div
-        className="stat-bar"
-        style={{ "--bar-color": config.color }}
-      >
+      <div className="stat-bar" style={{ "--bar-color": config.color }}>
         <div
           className="stat-bar-fill"
           style={{ width: `${fillPct}%`, background: config.color }}
@@ -79,26 +90,66 @@ function StatCard({ statKey, value, delta, config }) {
   );
 }
 
+// ── Screens ──
+
+const SCREEN_API_KEY = "api_key";
+const SCREEN_PROFILE = "profile";
+const SCREEN_GAME = "game";
+const SCREEN_ENDING = "ending";
+
 function App() {
+  // Core state
+  const [screen, setScreen] = useState(SCREEN_API_KEY);
   const [apiKey, setApiKey] = useState(
     () => localStorage.getItem("openai_key") || "",
   );
   const [keyInput, setKeyInput] = useState("");
+
+  // Player profile
+  const [profile, setProfile] = useState({
+    name: "",
+    age: "",
+    gender: "",
+    friends: "",
+    family: "",
+    town: "",
+  });
+
+  // Game state
   const [scene, setScene] = useState(null);
   const [stats, setStats] = useState(INITIAL_STATS);
   const [history, setHistory] = useState([]);
+  const [sceneNumber, setSceneNumber] = useState(1);
   const [lastChanges, setLastChanges] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [sceneVisible, setSceneVisible] = useState(false);
 
+  // Personality profile state
+  const [personality, setPersonality] = useState(null);
+  const [profileImage, setProfileImage] = useState(null);
+  const [profileLoading, setProfileLoading] = useState(false);
+
+  // Skip to profile screen if key already saved
+  useEffect(() => {
+    if (apiKey && screen === SCREEN_API_KEY) {
+      setScreen(SCREEN_PROFILE);
+    }
+  }, []);
+
   const fetchScene = useCallback(
-    async (currentStats, currentHistory) => {
+    async (currentStats, currentHistory, currentSceneNumber, currentProfile) => {
       setLoading(true);
       setError(null);
       setSceneVisible(false);
       try {
-        const data = await generateScene(apiKey, currentStats, currentHistory);
+        const data = await generateScene(
+          apiKey,
+          currentStats,
+          currentHistory,
+          currentProfile,
+          currentSceneNumber,
+        );
         setScene(data);
         requestAnimationFrame(() => {
           requestAnimationFrame(() => setSceneVisible(true));
@@ -112,27 +163,33 @@ function App() {
     [apiKey],
   );
 
-  useEffect(() => {
-    if (apiKey && !scene && !loading) {
-      fetchScene(INITIAL_STATS, []);
-    }
-  }, [apiKey, scene, loading, fetchScene]);
+  // ── Handlers ──
 
   function handleSaveKey() {
     const trimmed = keyInput.trim();
     if (!trimmed) return;
     localStorage.setItem("openai_key", trimmed);
     setApiKey(trimmed);
+    setScreen(SCREEN_PROFILE);
   }
 
   function handleClearKey() {
     localStorage.removeItem("openai_key");
     setApiKey("");
     setKeyInput("");
-    setScene(null);
-    setHistory([]);
-    setStats(INITIAL_STATS);
-    setLastChanges(null);
+    setScreen(SCREEN_API_KEY);
+    resetGame();
+  }
+
+  function handleProfileChange(field, value) {
+    setProfile((p) => ({ ...p, [field]: value }));
+  }
+
+  function handleStartGame() {
+    if (!profile.name.trim()) return;
+    resetGame();
+    setScreen(SCREEN_GAME);
+    fetchScene(INITIAL_STATS, [], 1, profile);
   }
 
   function handleChoice(choice) {
@@ -142,19 +199,61 @@ function App() {
       ...history,
       { choiceText: choice.text, sceneText: scene.text },
     ];
+    const nextSceneNumber = sceneNumber + 1;
     setStats(newStats);
     setHistory(newHistory);
     setLastChanges(choice.stats || null);
+    setSceneNumber(nextSceneNumber);
     setScene(null);
-    fetchScene(newStats, newHistory);
+    fetchScene(newStats, newHistory, nextSceneNumber, profile);
+  }
+
+  async function handleEnding() {
+    setScreen(SCREEN_ENDING);
+    setProfileLoading(true);
+    try {
+      const personalityData = await generatePersonality(
+        apiKey,
+        stats,
+        history,
+        profile,
+      );
+      setPersonality(personalityData);
+
+      // Generate image in parallel once we have the prompt
+      try {
+        const imageUrl = await generateProfileImage(
+          apiKey,
+          personalityData.imagePrompt,
+        );
+        setProfileImage(imageUrl);
+      } catch {
+        // Image generation can fail (billing, etc.) — continue without it
+        setProfileImage(null);
+      }
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setProfileLoading(false);
+    }
   }
 
   function handleRestart() {
-    setHistory([]);
-    setStats(INITIAL_STATS);
-    setLastChanges(null);
+    resetGame();
+    setScreen(SCREEN_PROFILE);
+  }
+
+  function resetGame() {
     setScene(null);
-    fetchScene(INITIAL_STATS, []);
+    setStats(INITIAL_STATS);
+    setHistory([]);
+    setSceneNumber(1);
+    setLastChanges(null);
+    setError(null);
+    setPersonality(null);
+    setProfileImage(null);
+    setProfileLoading(false);
+    setSceneVisible(false);
   }
 
   function renderSceneText(text) {
@@ -166,15 +265,23 @@ function App() {
     ));
   }
 
-  // API key entry screen
-  if (!apiKey) {
+  // Current day/time info
+  const currentDay = Math.floor((sceneNumber - 1) / 2) + 1;
+  const isAfternoon = sceneNumber % 2 === 0;
+  const dayName = DAY_NAMES[currentDay - 1] || "Søndag";
+  const timeLabel = isAfternoon ? "Eftermiddag" : "Formiddag";
+  const timeIcon = isAfternoon ? "🌆" : "🌅";
+
+  // ── API Key Screen ──
+
+  if (screen === SCREEN_API_KEY) {
     return (
       <div className="game">
-        <h1>Teen Life ✨</h1>
+        <h1>Teenagelivet ✨</h1>
         <div className="scene api-key-screen">
-          <p className="scene-text">
-            This game uses AI to generate a unique story every time you play.
-            Enter your OpenAI API key to get started.
+          <p className="scene-text" style={{ textAlign: "center" }}>
+            Dette spil bruger AI til at generere en unik historie hver gang du
+            spiller. Indtast din OpenAI API-nøgle for at komme i gang.
           </p>
           <input
             className="key-input"
@@ -185,25 +292,216 @@ function App() {
             onKeyDown={(e) => e.key === "Enter" && handleSaveKey()}
           />
           <button className="key-btn" onClick={handleSaveKey}>
-            Start Game
+            Fortsæt
           </button>
           <p className="key-hint">
-            Your key is stored in your browser only and sent directly to OpenAI.
+            Din nøgle gemmes kun i din browser og sendes direkte til OpenAI.
           </p>
         </div>
       </div>
     );
   }
 
+  // ── Profile Setup Screen ──
+
+  if (screen === SCREEN_PROFILE) {
+    return (
+      <div className="game">
+        <h1>Teenagelivet ✨</h1>
+        <div className="scene profile-screen">
+          <h2 className="profile-heading">🎭 Opret din karakter</h2>
+
+          <div className="profile-form">
+            <div className="profile-field">
+              <label>Navn *</label>
+              <input
+                type="text"
+                placeholder="Dit navn"
+                value={profile.name}
+                onChange={(e) => handleProfileChange("name", e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleStartGame()}
+              />
+            </div>
+
+            <div className="profile-row">
+              <div className="profile-field">
+                <label>Alder</label>
+                <input
+                  type="number"
+                  placeholder="15"
+                  min="12"
+                  max="19"
+                  value={profile.age}
+                  onChange={(e) => handleProfileChange("age", e.target.value)}
+                />
+              </div>
+              <div className="profile-field">
+                <label>Køn</label>
+                <select
+                  value={profile.gender}
+                  onChange={(e) =>
+                    handleProfileChange("gender", e.target.value)
+                  }
+                >
+                  <option value="">Vælg...</option>
+                  <option value="dreng">Dreng</option>
+                  <option value="pige">Pige</option>
+                  <option value="ikke-binær">Ikke-binær</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="profile-field">
+              <label>Hjemby</label>
+              <input
+                type="text"
+                placeholder="f.eks. København, Aarhus, Odense..."
+                value={profile.town}
+                onChange={(e) => handleProfileChange("town", e.target.value)}
+              />
+            </div>
+
+            <div className="profile-field">
+              <label>Venners navne</label>
+              <input
+                type="text"
+                placeholder="f.eks. Emma, Noah, Freja..."
+                value={profile.friends}
+                onChange={(e) =>
+                  handleProfileChange("friends", e.target.value)
+                }
+              />
+            </div>
+
+            <div className="profile-field">
+              <label>Families navne</label>
+              <input
+                type="text"
+                placeholder="f.eks. Mor: Anne, Far: Lars, Søster: Ida..."
+                value={profile.family}
+                onChange={(e) =>
+                  handleProfileChange("family", e.target.value)
+                }
+              />
+            </div>
+          </div>
+
+          <button
+            className="key-btn start-btn"
+            onClick={handleStartGame}
+            disabled={!profile.name.trim()}
+          >
+            🚀 Start Ugen
+          </button>
+
+          <button className="change-key-btn" onClick={handleClearKey}>
+            Skift API-nøgle
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Ending / Personality Profile Screen ──
+
+  if (screen === SCREEN_ENDING) {
+    return (
+      <div className="game">
+        <h1>Teenagelivet ✨</h1>
+
+        <div className="scene ending-screen">
+          {scene && renderSceneText(scene.text)}
+
+          {scene && (
+            <div className="ending">
+              <p className="ending-title">{scene.endingTitle}</p>
+              <p className="ending-label">
+                {scene.endingType === "good"
+                  ? "🌟 God Afslutning"
+                  : scene.endingType === "bad"
+                    ? "💀 Dårlig Afslutning"
+                    : "🌀 Neutral Afslutning"}
+              </p>
+              <p className="ending-steps">
+                7 dage — {history.length} valg
+              </p>
+            </div>
+          )}
+
+          <div className="profile-result">
+            {profileLoading && (
+              <div className="loading">
+                <div className="spinner" />
+                <p>Analyserer din personlighed...</p>
+              </div>
+            )}
+
+            {!profileLoading && error && (
+              <div className="error">
+                <p>Noget gik galt:</p>
+                <p className="error-detail">{error}</p>
+              </div>
+            )}
+
+            {!profileLoading && personality && (
+              <div className="personality-card">
+                <h2 className="personality-title">{personality.title}</h2>
+
+                {profileImage && (
+                  <div className="personality-image-wrap">
+                    <img
+                      className="personality-image"
+                      src={profileImage}
+                      alt="Din personlighedsprofil"
+                    />
+                  </div>
+                )}
+
+                <div className="personality-traits">
+                  {personality.traits.map((trait, i) => (
+                    <span className="trait-badge" key={i}>
+                      {trait}
+                    </span>
+                  ))}
+                </div>
+
+                <p className="personality-desc">{personality.description}</p>
+
+                <div className="final-stats">
+                  <h3>📊 Endelige Stats</h3>
+                  <div className="stats-bar">
+                    {Object.entries(STAT_CONFIG).map(([key, config]) => (
+                      <StatCard
+                        key={key}
+                        value={stats[key]}
+                        delta={null}
+                        config={config}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <button className="restart-btn" onClick={handleRestart}>
+            🔄 Spil Igen
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Game Screen ──
+
   return (
     <div className="game">
-      <h1>Teen Life ✨</h1>
+      <h1>Teenagelivet ✨</h1>
 
       <div className="stats-bar">
         {Object.entries(STAT_CONFIG).map(([key, config]) => (
           <StatCard
             key={key}
-            statKey={key}
             value={stats[key]}
             delta={lastChanges?.[key]}
             config={config}
@@ -211,30 +509,42 @@ function App() {
         ))}
       </div>
 
-      <div className="step-counter">
-        Step {history.length + (scene && !scene.ending ? 1 : 0)}
+      <div className="day-tracker">
+        <span className="day-icon">{timeIcon}</span>
+        <span className="day-label">
+          Dag {currentDay} — {dayName} {timeLabel}
+        </span>
+        <span className="day-progress">
+          {sceneNumber}/14
+        </span>
       </div>
 
       <div className="scene">
         {loading && (
           <div className="loading">
             <div className="spinner" />
-            <p>Generating your story...</p>
+            <p>Genererer din historie...</p>
           </div>
         )}
 
-        {error && (
+        {error && !loading && (
           <div className="error">
-            <p>Something went wrong:</p>
+            <p>Noget gik galt:</p>
             <p className="error-detail">{error}</p>
-            <button onClick={() => fetchScene(stats, history)}>
-              Try Again
+            <button
+              onClick={() =>
+                fetchScene(stats, history, sceneNumber, profile)
+              }
+            >
+              Prøv Igen
             </button>
           </div>
         )}
 
         {!loading && !error && scene && (
-          <div className={`scene-content ${sceneVisible ? "scene-fade-in" : ""}`}>
+          <div
+            className={`scene-content ${sceneVisible ? "scene-fade-in" : ""}`}
+          >
             {renderSceneText(scene.text)}
 
             {scene.ending ? (
@@ -242,15 +552,14 @@ function App() {
                 <p className="ending-title">{scene.endingTitle}</p>
                 <p className="ending-label">
                   {scene.endingType === "good"
-                    ? "🌟 Good Ending"
+                    ? "🌟 God Afslutning"
                     : scene.endingType === "bad"
-                      ? "💀 Bad Ending"
-                      : "🌀 Neutral Ending"}
+                      ? "💀 Dårlig Afslutning"
+                      : "🌀 Neutral Afslutning"}
                 </p>
-                <p className="ending-steps">
-                  Finished in {history.length} choices
-                </p>
-                <button onClick={handleRestart}>🔄 Play Again</button>
+                <button onClick={handleEnding}>
+                  🔮 Se Din Personlighedsprofil
+                </button>
               </div>
             ) : (
               <div className="choices">
@@ -286,7 +595,7 @@ function App() {
       </div>
 
       <button className="change-key-btn" onClick={handleClearKey}>
-        Change API Key
+        Skift API-nøgle
       </button>
     </div>
   );
