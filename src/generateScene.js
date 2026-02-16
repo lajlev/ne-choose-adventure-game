@@ -31,19 +31,21 @@ Regler:
 - Hver scene repræsenterer en halv dag (formiddag eller eftermiddag/aften)
 - Scenen SKAL passe til tidspunktet: formiddagsscener handler om at stå op, skole, morgenmad osv. Eftermiddags/aften-scener handler om fritid, venner, aftensaktiviteter
 - Overvej spillerens nuværende stats — lavt helbred = træt/syg, få kroner = pengemangel, mange venner = populær osv.
-- Spillet varer præcis 7 dage (14 halve dage / scener). Du SKAL ALDRIG slutte historien før scene 14. På PRÆCIS scene 14 SKAL du lave en afslutning.
+- Spillet varer præcis 14 dage (28 halve dage / scener). Du SKAL ALDRIG slutte historien før scene 28. På PRÆCIS scene 28 SKAL du lave en afslutning.
+- I weekend-scener (lørdag/søndag) skal tonen være mere afslappet — ingen skole, mere fritid og sociale ting
+- I uge 2 kan historien bygge videre på relationer og konsekvenser fra uge 1
 - For afslutningsscener: sæt "ending": true og tilføj "endingTitle" (kreativ titel med emoji) og "endingType" ("good", "neutral" eller "bad"). Afslutningsscener har ingen choices — brug tom array []
-- Afslutningsscenetekst skal opsummere ugen dramatisk og tilfredsstillende med emojis
+- Afslutningsscenetekst skal opsummere de to uger dramatisk og tilfredsstillende med emojis
 - Gør valg meningsfulde med ægte afvejninger`;
 
-const PROFILE_PROMPT = `Du er en personlighedsanalytiker. Baseret på en teenagers valg i løbet af en uge, skal du skabe en personlighedsprofil.
+const PROFILE_PROMPT = `Du er en personlighedsanalytiker. Baseret på en teenagers valg i løbet af to uger, skal du skabe en personlighedsprofil.
 
 Du SKAL svare med valid JSON:
 {
   "title": "En kreativ titel for personlighedstypen med emoji (f.eks. '🦁 Den Modige Leder')",
   "traits": ["egenskab1", "egenskab2", "egenskab3", "egenskab4", "egenskab5"],
   "description": "En kort, positiv og opløftende personlighedsbeskrivelse på 3-4 sætninger på dansk. Vær specifik om hvad valgene afslører om personligheden. Brug emojis.",
-  "imagePrompt": "A colorful, stylized digital illustration portrait representing a [personality type] teenager. [Include specific visual metaphors based on the personality traits]. Vibrant colors, modern art style, positive mood, no text."
+  "imagePrompt": "A fun exaggerated caricature drawing of a teenager who embodies [personality type]. Caricature style with big head, expressive oversized features, and humorous exaggeration. [Include specific visual details based on the personality traits — e.g. adventurous type holding a skateboard, bookworm surrounded by floating books, social butterfly with many hands reaching out]. Hand-drawn pen and ink caricature style with watercolor splashes of vibrant color. White background. No text or words."
 }
 
 Analyser disse valg og stats og lav en profil:`;
@@ -63,17 +65,18 @@ export async function generateScene(apiKey, stats, history, playerProfile, scene
   const day = Math.floor((sceneNumber - 1) / 2) + 1;
   const timeOfDay = sceneNumber % 2 === 1 ? "formiddag" : "eftermiddag/aften";
   const dayNames = ["mandag", "tirsdag", "onsdag", "torsdag", "fredag", "lørdag", "søndag"];
-  const dayName = dayNames[day - 1] || "søndag";
+  const dayName = dayNames[(day - 1) % 7];
+  const weekNumber = day <= 7 ? 1 : 2;
 
   const userMessage = `Nuværende stats: Helbred=${stats.health}, Humør=${stats.happiness}, Venner=${stats.friends}, Kroner=${stats.kroner}
 
-Scene ${sceneNumber} af 14 — Dag ${day} (${dayName}), ${timeOfDay}
-${sceneNumber === 14 ? "⚠️ DETTE ER DEN SIDSTE SCENE! Du SKAL lave en afslutning med ending: true!" : `Der er ${14 - sceneNumber} scener tilbage.`}
+Scene ${sceneNumber} af 28 — Uge ${weekNumber}, Dag ${day} (${dayName}), ${timeOfDay}
+${sceneNumber === 28 ? "⚠️ DETTE ER DEN SIDSTE SCENE! Du SKAL lave en afslutning med ending: true!" : `Der er ${28 - sceneNumber} scener tilbage.`}
 
 Valg indtil nu (${history.length} i alt):
-${history.length === 0 ? "Ingen — dette er åbningsscenen. Start en ny uge i " + (playerProfile.town || "byen") + " på en mandag morgen." : history.map((h, i) => `${i + 1}. "${h.choiceText}"`).join("\n")}
+${history.length === 0 ? "Ingen — dette er åbningsscenen. Start to nye uger i " + (playerProfile.town || "byen") + " på en mandag morgen." : history.map((h, i) => `${i + 1}. "${h.choiceText}"`).join("\n")}
 
-Generer næste scene. Husk: 3 valgmuligheder, emojis, dansk, afsnit adskilt af \\n\\n.${sceneNumber === 14 ? " AFSLUT HISTORIEN!" : ""}`;
+Generer næste scene. Husk: 3 valgmuligheder, emojis, dansk, afsnit adskilt af \\n\\n.${sceneNumber === 28 ? " AFSLUT HISTORIEN!" : ""}`;
 
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -109,7 +112,7 @@ export async function generatePersonality(apiKey, stats, history, playerProfile)
   const userMessage = `Spiller: ${playerProfile.name}${playerProfile.age ? `, ${playerProfile.age} år` : ""}
 Endelige stats: Helbred=${stats.health}, Humør=${stats.happiness}, Venner=${stats.friends}, Kroner=${stats.kroner}
 
-Valg i løbet af ugen:
+Valg i løbet af de to uger:
 ${choicesSummary}
 
 Lav en personlighedsprofil baseret på disse valg. Svar på dansk (undtagen imagePrompt som skal være på engelsk).`;

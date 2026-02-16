@@ -268,7 +268,8 @@ function App() {
   // Current day/time info
   const currentDay = Math.floor((sceneNumber - 1) / 2) + 1;
   const isAfternoon = sceneNumber % 2 === 0;
-  const dayName = DAY_NAMES[currentDay - 1] || "Søndag";
+  const dayName = DAY_NAMES[(currentDay - 1) % 7];
+  const weekNumber = currentDay <= 7 ? 1 : 2;
   const timeLabel = isAfternoon ? "Eftermiddag" : "Formiddag";
   const timeIcon = isAfternoon ? "🌆" : "🌅";
 
@@ -391,7 +392,7 @@ function App() {
             onClick={handleStartGame}
             disabled={!profile.name.trim()}
           >
-            🚀 Start Ugen
+            🚀 Start Eventyret
           </button>
 
           <button className="change-key-btn" onClick={handleClearKey}>
@@ -423,7 +424,7 @@ function App() {
                     : "🌀 Neutral Afslutning"}
               </p>
               <p className="ending-steps">
-                7 dage — {history.length} valg
+                14 dage — {history.length} valg
               </p>
             </div>
           )}
@@ -512,10 +513,10 @@ function App() {
       <div className="day-tracker">
         <span className="day-icon">{timeIcon}</span>
         <span className="day-label">
-          Dag {currentDay} — {dayName} {timeLabel}
+          Uge {weekNumber} — {dayName} {timeLabel}
         </span>
         <span className="day-progress">
-          {sceneNumber}/14
+          Dag {currentDay}/14
         </span>
       </div>
 
