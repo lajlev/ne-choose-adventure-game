@@ -3,10 +3,10 @@ import story, { INITIAL_STATS } from "./story";
 import "./App.css";
 
 const STAT_CONFIG = {
-  health: { label: "Health", icon: "+" },
-  happiness: { label: "Happy", icon: ":)" },
-  friends: { label: "Friends", icon: "@" },
-  dollars: { label: "Dollars", icon: "$" },
+  health: { label: "Health", icon: "❤️" },
+  happiness: { label: "Happy", icon: "😊" },
+  friends: { label: "Friends", icon: "👫" },
+  dollars: { label: "Dollars", icon: "💵" },
 };
 
 function applyStats(current, changes) {
