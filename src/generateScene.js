@@ -31,14 +31,14 @@ Regler:
 - Hver scene repræsenterer en halv dag (formiddag eller eftermiddag/aften)
 - Scenen SKAL passe til tidspunktet: formiddagsscener handler om at stå op, skole, morgenmad osv. Eftermiddags/aften-scener handler om fritid, venner, aftensaktiviteter
 - Overvej spillerens nuværende stats — lavt helbred = træt/syg, få kroner = pengemangel, mange venner = populær osv.
-- Spillet varer præcis 14 dage (28 halve dage / scener). Du SKAL ALDRIG slutte historien før scene 28. På PRÆCIS scene 28 SKAL du lave en afslutning.
+- Spillet varer præcis {{TOTAL_DAYS}} dage ({{TOTAL_SCENES}} halve dage / scener). Du SKAL ALDRIG slutte historien før scene {{TOTAL_SCENES}}. På PRÆCIS scene {{TOTAL_SCENES}} SKAL du lave en afslutning.
 - I weekend-scener (lørdag/søndag) skal tonen være mere afslappet — ingen skole, mere fritid og sociale ting
-- I uge 2 kan historien bygge videre på relationer og konsekvenser fra uge 1
+- Hvis spillet er længere end 7 dage, kan historien bygge videre på relationer og konsekvenser fra tidligere uger
 - For afslutningsscener: sæt "ending": true og tilføj "endingTitle" (kreativ titel med emoji) og "endingType" ("good", "neutral" eller "bad"). Afslutningsscener har ingen choices — brug tom array []
-- Afslutningsscenetekst skal opsummere de to uger dramatisk og tilfredsstillende med emojis
+- Afslutningsscenetekst skal opsummere perioden dramatisk og tilfredsstillende med emojis
 - Gør valg meningsfulde med ægte afvejninger`;
 
-const PROFILE_PROMPT = `Du er en personlighedsanalytiker. Baseret på en teenagers valg i løbet af to uger, skal du skabe en personlighedsprofil.
+const PROFILE_PROMPT = `Du er en personlighedsanalytiker. Baseret på en teenagers valg i løbet af en periode, skal du skabe en personlighedsprofil.
 
 Du SKAL svare med valid JSON:
 {
@@ -50,7 +50,8 @@ Du SKAL svare med valid JSON:
 
 Analyser disse valg og stats og lav en profil:`;
 
-export async function generateScene(apiKey, stats, history, playerProfile, sceneNumber) {
+export async function generateScene(apiKey, stats, history, playerProfile, sceneNumber, totalScenes) {
+  const totalDays = totalScenes / 2;
   const profileStr = [
     `Navn: ${playerProfile.name}`,
     playerProfile.age ? `Alder: ${playerProfile.age}` : null,
@@ -60,23 +61,26 @@ export async function generateScene(apiKey, stats, history, playerProfile, scene
     playerProfile.family ? `Familie: ${playerProfile.family}` : null,
   ].filter(Boolean).join("\n");
 
-  const prompt = SYSTEM_PROMPT.replace("{{PLAYER_PROFILE}}", profileStr);
+  const prompt = SYSTEM_PROMPT
+    .replace("{{PLAYER_PROFILE}}", profileStr)
+    .replace(/\{\{TOTAL_DAYS\}\}/g, totalDays)
+    .replace(/\{\{TOTAL_SCENES\}\}/g, totalScenes);
 
   const day = Math.floor((sceneNumber - 1) / 2) + 1;
   const timeOfDay = sceneNumber % 2 === 1 ? "formiddag" : "eftermiddag/aften";
   const dayNames = ["mandag", "tirsdag", "onsdag", "torsdag", "fredag", "lørdag", "søndag"];
   const dayName = dayNames[(day - 1) % 7];
-  const weekNumber = day <= 7 ? 1 : 2;
+  const weekNumber = Math.floor((day - 1) / 7) + 1;
 
   const userMessage = `Nuværende stats: Helbred=${stats.health}, Humør=${stats.happiness}, Venner=${stats.friends}, Kroner=${stats.kroner}
 
-Scene ${sceneNumber} af 28 — Uge ${weekNumber}, Dag ${day} (${dayName}), ${timeOfDay}
-${sceneNumber === 28 ? "⚠️ DETTE ER DEN SIDSTE SCENE! Du SKAL lave en afslutning med ending: true!" : `Der er ${28 - sceneNumber} scener tilbage.`}
+Scene ${sceneNumber} af ${totalScenes} — Uge ${weekNumber}, Dag ${day} (${dayName}), ${timeOfDay}
+${sceneNumber === totalScenes ? "⚠️ DETTE ER DEN SIDSTE SCENE! Du SKAL lave en afslutning med ending: true!" : `Der er ${totalScenes - sceneNumber} scener tilbage.`}
 
 Valg indtil nu (${history.length} i alt):
-${history.length === 0 ? "Ingen — dette er åbningsscenen. Start to nye uger i " + (playerProfile.town || "byen") + " på en mandag morgen." : history.map((h, i) => `${i + 1}. "${h.choiceText}"`).join("\n")}
+${history.length === 0 ? "Ingen — dette er åbningsscenen. Start " + totalDays + " nye dage i " + (playerProfile.town || "byen") + " på en mandag morgen." : history.map((h, i) => `${i + 1}. "${h.choiceText}"`).join("\n")}
 
-Generer næste scene. Husk: 3 valgmuligheder, emojis, dansk, afsnit adskilt af \\n\\n.${sceneNumber === 28 ? " AFSLUT HISTORIEN!" : ""}`;
+Generer næste scene. Husk: 3 valgmuligheder, emojis, dansk, afsnit adskilt af \\n\\n.${sceneNumber === totalScenes ? " AFSLUT HISTORIEN!" : ""}`;
 
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -106,13 +110,13 @@ Generer næste scene. Husk: 3 valgmuligheder, emojis, dansk, afsnit adskilt af \
   return JSON.parse(content);
 }
 
-export async function generatePersonality(apiKey, stats, history, playerProfile) {
+export async function generatePersonality(apiKey, stats, history, playerProfile, totalDays) {
   const choicesSummary = history.map((h, i) => `${i + 1}. "${h.choiceText}"`).join("\n");
 
   const userMessage = `Spiller: ${playerProfile.name}${playerProfile.age ? `, ${playerProfile.age} år` : ""}
 Endelige stats: Helbred=${stats.health}, Humør=${stats.happiness}, Venner=${stats.friends}, Kroner=${stats.kroner}
 
-Valg i løbet af de to uger:
+Valg i løbet af ${totalDays} dage:
 ${choicesSummary}
 
 Lav en personlighedsprofil baseret på disse valg. Svar på dansk (undtagen imagePrompt som skal være på engelsk).`;

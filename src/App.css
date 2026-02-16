@@ -514,6 +514,40 @@ h1 {
   margin: 0 auto 0.75rem;
 }
 
+/* Days selector */
+
+.days-selector {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.days-btn {
+  flex: 1;
+  padding: 0.55rem 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  border-radius: 8px;
+  border: 1px solid rgba(201, 160, 220, 0.2);
+  background: rgba(255, 255, 255, 0.04);
+  color: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  opacity: 0.5;
+}
+
+.days-btn:hover {
+  opacity: 0.8;
+  border-color: rgba(201, 160, 220, 0.4);
+}
+
+.days-btn-active {
+  opacity: 1;
+  background: rgba(201, 160, 220, 0.2);
+  border-color: #c9a0dc;
+  color: #c9a0dc;
+  box-shadow: 0 0 10px rgba(201, 160, 220, 0.15);
+}
+
 /* ── Personality profile card ── */
 
 .ending-screen {

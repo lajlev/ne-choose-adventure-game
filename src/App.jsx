@@ -114,6 +114,7 @@ function App() {
     family: "",
     town: "",
   });
+  const [gameDays, setGameDays] = useState(7);
 
   // Game state
   const [scene, setScene] = useState(null);
@@ -137,6 +138,8 @@ function App() {
     }
   }, []);
 
+  const totalScenes = gameDays * 2;
+
   const fetchScene = useCallback(
     async (currentStats, currentHistory, currentSceneNumber, currentProfile) => {
       setLoading(true);
@@ -149,6 +152,7 @@ function App() {
           currentHistory,
           currentProfile,
           currentSceneNumber,
+          totalScenes,
         );
         setScene(data);
         requestAnimationFrame(() => {
@@ -160,7 +164,7 @@ function App() {
         setLoading(false);
       }
     },
-    [apiKey],
+    [apiKey, totalScenes],
   );
 
   // ── Handlers ──
@@ -217,6 +221,7 @@ function App() {
         stats,
         history,
         profile,
+        gameDays,
       );
       setPersonality(personalityData);
 
@@ -269,7 +274,7 @@ function App() {
   const currentDay = Math.floor((sceneNumber - 1) / 2) + 1;
   const isAfternoon = sceneNumber % 2 === 0;
   const dayName = DAY_NAMES[(currentDay - 1) % 7];
-  const weekNumber = currentDay <= 7 ? 1 : 2;
+  const weekNumber = Math.floor((currentDay - 1) / 7) + 1;
   const timeLabel = isAfternoon ? "Eftermiddag" : "Formiddag";
   const timeIcon = isAfternoon ? "🌆" : "🌅";
 
@@ -353,6 +358,22 @@ function App() {
             </div>
 
             <div className="profile-field">
+              <label>Antal dage</label>
+              <div className="days-selector">
+                {[3, 5, 7, 10, 14].map((d) => (
+                  <button
+                    key={d}
+                    className={`days-btn ${gameDays === d ? "days-btn-active" : ""}`}
+                    onClick={() => setGameDays(d)}
+                    type="button"
+                  >
+                    {d}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="profile-field">
               <label>Hjemby</label>
               <input
                 type="text"
@@ -424,7 +445,7 @@ function App() {
                     : "🌀 Neutral Afslutning"}
               </p>
               <p className="ending-steps">
-                14 dage — {history.length} valg
+                {gameDays} dage — {history.length} valg
               </p>
             </div>
           )}
@@ -516,7 +537,7 @@ function App() {
           Uge {weekNumber} — {dayName} {timeLabel}
         </span>
         <span className="day-progress">
-          Dag {currentDay}/14
+          Dag {currentDay}/{gameDays}
         </span>
       </div>
 
