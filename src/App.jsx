@@ -1,13 +1,13 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { INITIAL_STATS } from "./story";
 import { generateScene } from "./generateScene";
 import "./App.css";
 
 const STAT_CONFIG = {
-  health: { label: "Health", icon: "❤️" },
-  happiness: { label: "Happy", icon: "😊" },
-  friends: { label: "Friends", icon: "👫" },
-  dollars: { label: "Dollars", icon: "💵" },
+  health: { label: "Health", icon: "❤️", color: "#eb5757", max: 100 },
+  happiness: { label: "Happy", icon: "😊", color: "#f2c94c", max: 100 },
+  friends: { label: "Friends", icon: "👫", color: "#56ccf2", max: 20 },
+  dollars: { label: "Dollars", icon: "💵", color: "#6fcf97", max: 100 },
 };
 
 function applyStats(current, changes) {
@@ -23,6 +23,62 @@ function formatDelta(val) {
   return val > 0 ? `+${val}` : `${val}`;
 }
 
+function StatCard({ statKey, value, delta, config }) {
+  const [animate, setAnimate] = useState(false);
+  const prevValue = useRef(value);
+  const fillPct = Math.min(100, (value / config.max) * 100);
+
+  useEffect(() => {
+    if (value !== prevValue.current) {
+      setAnimate(true);
+      prevValue.current = value;
+      const t = setTimeout(() => setAnimate(false), 800);
+      return () => clearTimeout(t);
+    }
+  }, [value]);
+
+  const glowClass = animate
+    ? delta > 0
+      ? "stat-glow-pos"
+      : delta < 0
+        ? "stat-glow-neg"
+        : ""
+    : "";
+
+  return (
+    <div className={`stat ${glowClass}`}>
+      <div
+        className="stat-fill"
+        style={{
+          height: `${fillPct}%`,
+          background: `linear-gradient(to top, ${config.color}33, ${config.color}11)`,
+        }}
+      />
+      <span className={`stat-icon ${animate ? "stat-icon-bounce" : ""}`}>
+        {config.icon}
+      </span>
+      <span className="stat-value">{value}</span>
+      {delta && (
+        <span
+          className={`stat-delta ${delta > 0 ? "pos" : "neg"} stat-delta-pop`}
+        >
+          {formatDelta(delta)}
+        </span>
+      )}
+      <span className="stat-label">{config.label}</span>
+      <div
+        className="stat-bar"
+        style={{ "--bar-color": config.color }}
+      >
+        <div
+          className="stat-bar-fill"
+          style={{ width: `${fillPct}%`, background: config.color }}
+        />
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const [apiKey, setApiKey] = useState(
     () => localStorage.getItem("openai_key") || "",
@@ -34,14 +90,19 @@ function App() {
   const [lastChanges, setLastChanges] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [sceneVisible, setSceneVisible] = useState(false);
 
   const fetchScene = useCallback(
     async (currentStats, currentHistory) => {
       setLoading(true);
       setError(null);
+      setSceneVisible(false);
       try {
         const data = await generateScene(apiKey, currentStats, currentHistory);
         setScene(data);
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => setSceneVisible(true));
+        });
       } catch (e) {
         setError(e.message);
       } finally {
@@ -96,11 +157,20 @@ function App() {
     fetchScene(INITIAL_STATS, []);
   }
 
+  function renderSceneText(text) {
+    const paragraphs = text.split(/\n\n|\n/).filter(Boolean);
+    return paragraphs.map((p, i) => (
+      <p className="scene-text" key={i}>
+        {p}
+      </p>
+    ));
+  }
+
   // API key entry screen
   if (!apiKey) {
     return (
       <div className="game">
-        <h1>Teen Life</h1>
+        <h1>Teen Life ✨</h1>
         <div className="scene api-key-screen">
           <p className="scene-text">
             This game uses AI to generate a unique story every time you play.
@@ -127,25 +197,22 @@ function App() {
 
   return (
     <div className="game">
-      <h1>Teen Life</h1>
+      <h1>Teen Life ✨</h1>
 
       <div className="stats-bar">
-        {Object.entries(STAT_CONFIG).map(([key, { label, icon }]) => {
-          const val = stats[key];
-          const delta = lastChanges?.[key];
-          return (
-            <div className="stat" key={key}>
-              <span className="stat-icon">{icon}</span>
-              <span className="stat-value">{val}</span>
-              {delta && (
-                <span className={`stat-delta ${delta > 0 ? "pos" : "neg"}`}>
-                  {formatDelta(delta)}
-                </span>
-              )}
-              <span className="stat-label">{label}</span>
-            </div>
-          );
-        })}
+        {Object.entries(STAT_CONFIG).map(([key, config]) => (
+          <StatCard
+            key={key}
+            statKey={key}
+            value={stats[key]}
+            delta={lastChanges?.[key]}
+            config={config}
+          />
+        ))}
+      </div>
+
+      <div className="step-counter">
+        Step {history.length + (scene && !scene.ending ? 1 : 0)}
       </div>
 
       <div className="scene">
@@ -167,28 +234,33 @@ function App() {
         )}
 
         {!loading && !error && scene && (
-          <>
-            <p className="scene-text">{scene.text}</p>
+          <div className={`scene-content ${sceneVisible ? "scene-fade-in" : ""}`}>
+            {renderSceneText(scene.text)}
 
             {scene.ending ? (
               <div className="ending">
                 <p className="ending-title">{scene.endingTitle}</p>
                 <p className="ending-label">
                   {scene.endingType === "good"
-                    ? "Good Ending"
+                    ? "🌟 Good Ending"
                     : scene.endingType === "bad"
-                      ? "Bad Ending"
-                      : "Neutral Ending"}
+                      ? "💀 Bad Ending"
+                      : "🌀 Neutral Ending"}
                 </p>
                 <p className="ending-steps">
                   Finished in {history.length} choices
                 </p>
-                <button onClick={handleRestart}>Play Again</button>
+                <button onClick={handleRestart}>🔄 Play Again</button>
               </div>
             ) : (
               <div className="choices">
                 {scene.choices.map((choice, i) => (
-                  <button key={i} onClick={() => handleChoice(choice)}>
+                  <button
+                    key={i}
+                    onClick={() => handleChoice(choice)}
+                    style={{ animationDelay: `${i * 0.1}s` }}
+                    className="choice-btn"
+                  >
                     <span className="choice-text">{choice.text}</span>
                     {choice.stats && (
                       <span className="choice-stats">
@@ -209,7 +281,7 @@ function App() {
                 ))}
               </div>
             )}
-          </>
+          </div>
         )}
       </div>
 
