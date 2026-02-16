@@ -274,14 +274,7 @@ function App() {
 
   // Age-aware field helpers
   const ageNum = parseInt(profile.age, 10) || 0;
-  const occupationLabel =
-    ageNum <= 5
-      ? "Børnehave/Dagpleje"
-      : ageNum <= 17
-        ? "Skole/Uddannelse"
-        : ageNum >= 65
-          ? "Tidligere beskæftigelse"
-          : "Arbejde/Uddannelse";
+  const occupationLabel = "Børnehave/Skole/Arbejde/Andet";
   const occupationPlaceholder =
     ageNum <= 5
       ? "f.eks. Solstrålen Børnehave"
