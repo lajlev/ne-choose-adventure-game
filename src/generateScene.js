@@ -131,6 +131,8 @@ Regler:
 - De 3 valg skal føles ægte forskellige — ét risikofyldt/dristigt, ét sikkert/forsigtigt, ét socialt/kreativt
 - ${ctx.toneNote}
 - Brug spillerens navn, venners navne og familiemedlemmers navne naturligt i historien
+- Hvis spilleren har angivet skole/arbejde, brug det som den primære setting for formiddagsscener — korrekte navne, kollegaer/klassekammerater, realistiske situationer derfra
+- Hvis spilleren har angivet fritidsinteresser, integrer dem naturligt i scener — de kan dukke op som aktiviteter, samtaleemner, eller valgmuligheder
 - Referer til spillerens hjemby når det passer
 - Referer til karakterer og begivenheder fra tidligere i historien for kontinuitet
 - Hver scene repræsenterer en halv dag (formiddag eller eftermiddag/aften)
@@ -173,6 +175,8 @@ export async function generateScene(apiKey, stats, history, playerProfile, scene
     `Navn: ${playerProfile.name}`,
     playerProfile.age ? `Alder: ${playerProfile.age}` : null,
     playerProfile.gender ? `Køn: ${playerProfile.gender}` : null,
+    playerProfile.occupation ? `Skole/Arbejde: ${playerProfile.occupation}` : null,
+    playerProfile.hobbies ? `Fritidsinteresser: ${playerProfile.hobbies}` : null,
     playerProfile.town ? `Hjemby: ${playerProfile.town}` : null,
     playerProfile.friends ? `Venner: ${playerProfile.friends}` : null,
     playerProfile.family ? `Familie: ${playerProfile.family}` : null,

@@ -110,6 +110,8 @@ function App() {
     name: "",
     age: "",
     gender: "",
+    occupation: "",
+    hobbies: "",
     friends: "",
     family: "",
     town: "",
@@ -270,6 +272,39 @@ function App() {
     ));
   }
 
+  // Age-aware field helpers
+  const ageNum = parseInt(profile.age, 10) || 0;
+  const occupationLabel =
+    ageNum <= 5
+      ? "Børnehave/Dagpleje"
+      : ageNum <= 17
+        ? "Skole/Uddannelse"
+        : ageNum >= 65
+          ? "Tidligere beskæftigelse"
+          : "Arbejde/Uddannelse";
+  const occupationPlaceholder =
+    ageNum <= 5
+      ? "f.eks. Solstrålen Børnehave"
+      : ageNum <= 12
+        ? "f.eks. 4. klasse på Bakkeskolen"
+        : ageNum <= 17
+          ? "f.eks. 2.g på Roskilde Gymnasium"
+          : ageNum <= 25
+            ? "f.eks. Medicinstuderende på KU, tjener på café"
+            : ageNum >= 65
+              ? "f.eks. Pensioneret tømrer"
+              : "f.eks. Sygeplejerske på Rigshospitalet";
+  const hobbiesPlaceholder =
+    ageNum <= 5
+      ? "f.eks. Tegne, lege med LEGO, synge..."
+      : ageNum <= 12
+        ? "f.eks. Fodbold, Minecraft, tegne, svømning..."
+        : ageNum <= 17
+          ? "f.eks. Gaming, musik, skateboard, fitness..."
+          : ageNum >= 65
+            ? "f.eks. Havearbejde, bridge, gåture, maleri..."
+            : "f.eks. Løb, madlavning, rejser, læsning...";
+
   // Current day/time info
   const currentDay = Math.floor((sceneNumber - 1) / 2) + 1;
   const isAfternoon = sceneNumber % 2 === 0;
@@ -380,6 +415,30 @@ function App() {
                   </button>
                 ))}
               </div>
+            </div>
+
+            <div className="profile-field">
+              <label>{occupationLabel}</label>
+              <input
+                type="text"
+                placeholder={occupationPlaceholder}
+                value={profile.occupation}
+                onChange={(e) =>
+                  handleProfileChange("occupation", e.target.value)
+                }
+              />
+            </div>
+
+            <div className="profile-field">
+              <label>Fritidsinteresser</label>
+              <input
+                type="text"
+                placeholder={hobbiesPlaceholder}
+                value={profile.hobbies}
+                onChange={(e) =>
+                  handleProfileChange("hobbies", e.target.value)
+                }
+              />
             </div>
 
             <div className="profile-field">
