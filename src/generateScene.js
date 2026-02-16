@@ -1,4 +1,109 @@
-const SYSTEM_PROMPT = `Du er en fortæller i et teenagelivs-eventyrspil. Du genererer interaktive scener om realistisk teenageliv i Danmark — skole, venner, familie, penge, helbred, sociale situationer.
+function getAgeContext(age) {
+  const a = parseInt(age, 10);
+  if (!a || a < 3) {
+    // Default / unknown age — generic adult
+    return {
+      label: "voksenlivs",
+      setting: "arbejde, venner, familie, økonomi, helbred, sociale situationer",
+      morningActivities: "formiddagsscener handler om at stå op, arbejde, morgenmad osv.",
+      afternoonActivities: "eftermiddags/aften-scener handler om fritid, venner, hobbyer, aftensaktiviteter",
+      weekendNote: "I weekend-scener (lørdag/søndag) skal tonen være mere afslappet — ingen arbejde, mere fritid og sociale ting",
+      toneNote: "Hold tonen relaterbar, levende og realistisk for en voksen",
+      exampleChoice: "🍳 Lav en ordentlig morgenmad før arbejde",
+    };
+  }
+  if (a <= 5) {
+    return {
+      label: "børnelivs",
+      setting: "børnehave/dagpleje, leg, familie, fantasi, venner, eventyr i hverdagen",
+      morningActivities: "formiddagsscener handler om at blive vækket, morgenmad med familien, aflevering i børnehave, leg med de andre børn",
+      afternoonActivities: "eftermiddags/aften-scener handler om at blive hentet, lege derhjemme, aftenmad, godnathistorie",
+      weekendNote: "I weekend-scener (lørdag/søndag) er der ingen børnehave — fokus på familietid, legepladsen, udflugter",
+      toneNote: "Hold tonen varm, tryg, fantasifuld og alderssvarende for et lille barn. Beskriv verden gennem barnets nysgerrige øjne",
+      exampleChoice: "🧸 Leg med bamse i sandkassen",
+    };
+  }
+  if (a <= 9) {
+    return {
+      label: "børnelivs",
+      setting: "skole (indskoling), venner, leg, familie, hobbyer, fantasi og hverdagseventyr",
+      morningActivities: "formiddagsscener handler om at stå op, morgenmad, cykle/gå i skole, undervisning, frikvarter",
+      afternoonActivities: "eftermiddags/aften-scener handler om SFO/fritidsklub, lege med venner, hobbyer, lektier, aftenmad med familien",
+      weekendNote: "I weekend-scener (lørdag/søndag) er der ingen skole — fokus på leg, familietid, sports-/fritidsaktiviteter, overnatning hos venner",
+      toneNote: "Hold tonen sjov, eventyrlig og alderssvarende for et skolebarn. Verden er fuld af muligheder og opdagelser",
+      exampleChoice: "⚽ Spil fodbold med klassekammeraterne i frikvarteret",
+    };
+  }
+  if (a <= 12) {
+    return {
+      label: "børnelivs",
+      setting: "skole (mellemtrin), venner, hobbyer, familie, sport, begyndende selvstændighed",
+      morningActivities: "formiddagsscener handler om at stå op, skole, undervisning, gruppearbejde, frikvarter",
+      afternoonActivities: "eftermiddags/aften-scener handler om fritidsaktiviteter, sport, venner, gaming, lektier, familietid",
+      weekendNote: "I weekend-scener (lørdag/søndag) er der ingen skole — fokus på sport, venner, familieudflugter, hobbyer",
+      toneNote: "Hold tonen energisk, nysgerrig og alderssvarende for en tweenie. Balancen mellem at være barn og at ville være stor",
+      exampleChoice: "🎮 Tag med vennerne ned og spil i klubben",
+    };
+  }
+  if (a <= 17) {
+    return {
+      label: "teenagelivs",
+      setting: "skole/gymnasium, venner, fester, familie, kærlighed, fritidsjob, identitet, sociale medier",
+      morningActivities: "formiddagsscener handler om at stå op, skole/gymnasium, undervisning, frikvarter, kantinen",
+      afternoonActivities: "eftermiddags/aften-scener handler om fritid, venner, fester, fritidsjob, hobbyer, aftensaktiviteter",
+      weekendNote: "I weekend-scener (lørdag/søndag) er der ingen skole — fokus på fester, venner, fritidsjob, afslapning",
+      toneNote: "Hold tonen relaterbar, levende og alderssvarende for en teenager. Drama, identitet, venskaber og forandring",
+      exampleChoice: "🎮 Bliv hjemme og spil hele aftenen",
+    };
+  }
+  if (a <= 25) {
+    return {
+      label: "ungdomslivs",
+      setting: "uddannelse/universitet/første job, venner, kæreste, økonomi, flytning hjemmefra, fester, selvstændighed",
+      morningActivities: "formiddagsscener handler om at stå op, forelæsninger/arbejde, morgenmad, transport",
+      afternoonActivities: "eftermiddags/aften-scener handler om studiegrupper, venner, byture, bijob, dating, fritid",
+      weekendNote: "I weekend-scener (lørdag/søndag) er der fri — fokus på byture, venner, afslapning, brunch, hobbyer",
+      toneNote: "Hold tonen energisk og relaterbar for en ung voksen. Frihed, ansvar, usikkerhed og muligheder",
+      exampleChoice: "📚 Bliv hjemme og læs op til eksamen",
+    };
+  }
+  if (a <= 40) {
+    return {
+      label: "voksenlivs",
+      setting: "arbejde/karriere, familie, børn, parforhold, økonomi, bolig, venner, work-life balance",
+      morningActivities: "formiddagsscener handler om at stå op, gøre børn klar, transport, arbejde, møder",
+      afternoonActivities: "eftermiddags/aften-scener handler om at hente børn, madlavning, familietid, venner, hobbyer, parforhold",
+      weekendNote: "I weekend-scener (lørdag/søndag) er der fri fra arbejde — fokus på familieaktiviteter, venner, hus/have, afslapning",
+      toneNote: "Hold tonen realistisk og genkendelig for en travl voksen. Jonglering mellem ansvar, drømme og hverdagens glæder",
+      exampleChoice: "👔 Forbered dig grundigt til det store møde",
+    };
+  }
+  if (a <= 60) {
+    return {
+      label: "livs",
+      setting: "karriere, familie, voksne børn, parforhold, økonomi, helbred, livsændringer, nye mål",
+      morningActivities: "formiddagsscener handler om arbejde, morgenrutiner, motion, planlægning",
+      afternoonActivities: "eftermiddags/aften-scener handler om familiebesøg, venner, hobbyer, madlavning, afslapning",
+      weekendNote: "I weekend-scener (lørdag/søndag) er der fri — fokus på hobbyer, familiesammenkomster, rejser, haven",
+      toneNote: "Hold tonen reflekterende og varm. Livserfaring, nye kapitler, balance mellem pligt og passion",
+      exampleChoice: "🏡 Brug weekenden på haveprojektet",
+    };
+  }
+  // 61+
+  return {
+    label: "livs",
+    setting: "pension/seniortilværelse, børnebørn, helbred, hobbyer, rejser, frivilligt arbejde, livsvisdom",
+    morningActivities: "formiddagsscener handler om morgenkaffe, gåture, lægebesøg, indkøb, besøge venner",
+    afternoonActivities: "eftermiddags/aften-scener handler om hobbyer, børnebørn, havearbejde, TV, madlavning, sociale klubber",
+    weekendNote: "Weekend-scener kan ligne hverdage — men med mere familiebesøg, udflugter og rolige aktiviteter",
+    toneNote: "Hold tonen varm, humoristisk og livsbekræftende. Visdom, nostalgi, nye opdagelser og livets små glæder",
+    exampleChoice: "👴 Tag børnebørnene med i Tivoli",
+  };
+}
+
+function buildSystemPrompt(age) {
+  const ctx = getAgeContext(age);
+  return `Du er en fortæller i et ${ctx.label}eventyrspil. Du genererer interaktive scener om realistisk liv i Danmark — ${ctx.setting}.
 
 VIGTIGT: Alt tekst SKAL være på dansk. Skriv levende, relaterbart dansk med emojis.
 
@@ -19,36 +124,48 @@ Du SKAL svare med valid JSON der matcher dette skema:
 
 Regler:
 - Giv ALTID præcis 3 valgmuligheder
-- Hver valgtekst SKAL starte med en relevant emoji (f.eks. "🎮 Bliv hjemme og spil hele aftenen")
+- Hver valgtekst SKAL starte med en relevant emoji (f.eks. "${ctx.exampleChoice}")
 - Scenetekst SKAL bruge emojis naturligt (2-4 per scene) og adskille afsnit med \\n\\n
 - Stat-ændringer skal være heltal mellem -20 og +20, inkluder kun ikke-nul stats
 - Hvert valg skal påvirke 1-3 stats meningsfuldt
 - De 3 valg skal føles ægte forskellige — ét risikofyldt/dristigt, ét sikkert/forsigtigt, ét socialt/kreativt
-- Hold tonen relaterbar, levende og alderssvarende for teenagere
+- ${ctx.toneNote}
 - Brug spillerens navn, venners navne og familiemedlemmers navne naturligt i historien
 - Referer til spillerens hjemby når det passer
 - Referer til karakterer og begivenheder fra tidligere i historien for kontinuitet
 - Hver scene repræsenterer en halv dag (formiddag eller eftermiddag/aften)
-- Scenen SKAL passe til tidspunktet: formiddagsscener handler om at stå op, skole, morgenmad osv. Eftermiddags/aften-scener handler om fritid, venner, aftensaktiviteter
+- Scenen SKAL passe til tidspunktet: ${ctx.morningActivities}. ${ctx.afternoonActivities}
 - Overvej spillerens nuværende stats — lavt helbred = træt/syg, få kroner = pengemangel, mange venner = populær osv.
 - Spillet varer præcis {{TOTAL_DAYS}} dage ({{TOTAL_SCENES}} halve dage / scener). Du SKAL ALDRIG slutte historien før scene {{TOTAL_SCENES}}. På PRÆCIS scene {{TOTAL_SCENES}} SKAL du lave en afslutning.
-- I weekend-scener (lørdag/søndag) skal tonen være mere afslappet — ingen skole, mere fritid og sociale ting
+- ${ctx.weekendNote}
 - Hvis spillet er længere end 7 dage, kan historien bygge videre på relationer og konsekvenser fra tidligere uger
 - For afslutningsscener: sæt "ending": true og tilføj "endingTitle" (kreativ titel med emoji) og "endingType" ("good", "neutral" eller "bad"). Afslutningsscener har ingen choices — brug tom array []
 - Afslutningsscenetekst skal opsummere perioden dramatisk og tilfredsstillende med emojis
 - Gør valg meningsfulde med ægte afvejninger`;
+}
 
-const PROFILE_PROMPT = `Du er en personlighedsanalytiker. Baseret på en teenagers valg i løbet af en periode, skal du skabe en personlighedsprofil.
+function buildProfilePrompt(age) {
+  const a = parseInt(age, 10);
+  let ageDesc = "en person";
+  if (a && a <= 5) ageDesc = "et lille barn";
+  else if (a && a <= 12) ageDesc = "et barn";
+  else if (a && a <= 17) ageDesc = "en teenager";
+  else if (a && a <= 25) ageDesc = "en ung voksen";
+  else if (a && a <= 60) ageDesc = "en voksen";
+  else if (a && a > 60) ageDesc = "en senior";
+
+  return `Du er en personlighedsanalytiker. Baseret på ${ageDesc}s valg i løbet af en periode, skal du skabe en personlighedsprofil.
 
 Du SKAL svare med valid JSON:
 {
   "title": "En kreativ titel for personlighedstypen med emoji (f.eks. '🦁 Den Modige Leder')",
   "traits": ["egenskab1", "egenskab2", "egenskab3", "egenskab4", "egenskab5"],
   "description": "En kort, positiv og opløftende personlighedsbeskrivelse på 3-4 sætninger på dansk. Vær specifik om hvad valgene afslører om personligheden. Brug emojis.",
-  "imagePrompt": "A fun exaggerated caricature drawing of a teenager who embodies [personality type]. Caricature style with big head, expressive oversized features, and humorous exaggeration. [Include specific visual details based on the personality traits — e.g. adventurous type holding a skateboard, bookworm surrounded by floating books, social butterfly with many hands reaching out]. Hand-drawn pen and ink caricature style with watercolor splashes of vibrant color. White background. No text or words."
+  "imagePrompt": "A fun exaggerated caricature drawing of ${a && a <= 5 ? "a small child" : a && a <= 12 ? "a child" : a && a <= 17 ? "a teenager" : a && a <= 25 ? "a young adult" : a && a <= 60 ? "an adult" : a && a > 60 ? "an elderly person" : "a person"} who embodies [personality type]. Caricature style with big head, expressive oversized features, and humorous exaggeration. [Include specific visual details based on the personality traits — e.g. adventurous type holding a skateboard, bookworm surrounded by floating books, social butterfly with many hands reaching out]. Hand-drawn pen and ink caricature style with watercolor splashes of vibrant color. White background. No text or words."
 }
 
 Analyser disse valg og stats og lav en profil:`;
+}
 
 export async function generateScene(apiKey, stats, history, playerProfile, sceneNumber, totalScenes) {
   const totalDays = totalScenes / 2;
@@ -61,7 +178,7 @@ export async function generateScene(apiKey, stats, history, playerProfile, scene
     playerProfile.family ? `Familie: ${playerProfile.family}` : null,
   ].filter(Boolean).join("\n");
 
-  const prompt = SYSTEM_PROMPT
+  const prompt = buildSystemPrompt(playerProfile.age)
     .replace("{{PLAYER_PROFILE}}", profileStr)
     .replace(/\{\{TOTAL_DAYS\}\}/g, totalDays)
     .replace(/\{\{TOTAL_SCENES\}\}/g, totalScenes);
@@ -130,7 +247,7 @@ Lav en personlighedsprofil baseret på disse valg. Svar på dansk (undtagen imag
     body: JSON.stringify({
       model: "gpt-4o-mini",
       messages: [
-        { role: "system", content: PROFILE_PROMPT },
+        { role: "system", content: buildProfilePrompt(playerProfile.age) },
         { role: "user", content: userMessage },
       ],
       response_format: { type: "json_object" },

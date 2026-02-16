@@ -283,11 +283,11 @@ function App() {
   if (screen === SCREEN_API_KEY) {
     return (
       <div className="game">
-        <h1>Teenagelivet ✨</h1>
+        <h1>Livet ✨</h1>
         <div className="scene api-key-screen">
           <p className="scene-text" style={{ textAlign: "center" }}>
-            Dette spil bruger AI til at generere en unik historie hver gang du
-            spiller. Indtast din OpenAI API-nøgle for at komme i gang.
+            Dette spil bruger AI til at generere en unik historie om dit liv
+            — uanset alder. Indtast din OpenAI API-nøgle for at komme i gang.
           </p>
           <input
             className="key-input"
@@ -313,7 +313,7 @@ function App() {
   if (screen === SCREEN_PROFILE) {
     return (
       <div className="game">
-        <h1>Teenagelivet ✨</h1>
+        <h1>Livet ✨</h1>
         <div className="scene profile-screen">
           <h2 className="profile-heading">🎭 Opret din karakter</h2>
 
@@ -334,9 +334,9 @@ function App() {
                 <label>Alder</label>
                 <input
                   type="number"
-                  placeholder="15"
-                  min="12"
-                  max="19"
+                  placeholder="25"
+                  min="3"
+                  max="99"
                   value={profile.age}
                   onChange={(e) => handleProfileChange("age", e.target.value)}
                 />
@@ -350,8 +350,17 @@ function App() {
                   }
                 >
                   <option value="">Vælg...</option>
-                  <option value="dreng">Dreng</option>
-                  <option value="pige">Pige</option>
+                  {parseInt(profile.age, 10) >= 18 ? (
+                    <>
+                      <option value="mand">Mand</option>
+                      <option value="kvinde">Kvinde</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="dreng">Dreng</option>
+                      <option value="pige">Pige</option>
+                    </>
+                  )}
                   <option value="ikke-binær">Ikke-binær</option>
                 </select>
               </div>
@@ -429,7 +438,7 @@ function App() {
   if (screen === SCREEN_ENDING) {
     return (
       <div className="game">
-        <h1>Teenagelivet ✨</h1>
+        <h1>Livet ✨</h1>
 
         <div className="scene ending-screen">
           {scene && renderSceneText(scene.text)}
@@ -518,7 +527,7 @@ function App() {
 
   return (
     <div className="game">
-      <h1>Teenagelivet ✨</h1>
+      <h1>Livet ✨</h1>
 
       <div className="stats-bar">
         {Object.entries(STAT_CONFIG).map(([key, config]) => (
